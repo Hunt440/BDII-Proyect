@@ -1,0 +1,131 @@
+name,description,query,id,parentId,isFolder
+(1ra P) Cargar_datos 1-5 (1),,"/*
+======================================================
+PROYECTO III - Logistics Optimizer (Smart Routing)
+
+Integrantes:
+Angel Gonzalez (S1) - C.I: 30.366.096
+Glihanny Sotillo (S2) - C.I: 27.766.805
+Cesar Reyes (S1) - C.I: 29.906.628
+======================================================
+*/
+
+//Primera parte a ejecutar
+
+// ======================================================
+// LIMPIEZA DE DATOS
+// ======================================================
+
+MATCH (n)
+DETACH DELETE n;
+
+",0,,false
+(1ra P) Cargar_datos 2-5 (1),,"// ======================================================
+// RESTRICCIONES DE UNICIDAD
+// ======================================================
+
+CREATE CONSTRAINT almacen_id IF NOT EXISTS
+FOR (a:Almacen)
+REQUIRE a.id IS UNIQUE;
+
+CREATE CONSTRAINT punto_id IF NOT EXISTS
+FOR (p:PuntoEntrega)
+REQUIRE p.id IS UNIQUE;
+
+CREATE CONSTRAINT interseccion_id IF NOT EXISTS
+FOR (i:Interseccion)
+REQUIRE i.id IS UNIQUE;
+",1,,false
+(1ra P) Cargar_datos 3-5 (1),,"// ======================================================
+// CREACIÓN DE NODOS
+// ======================================================
+
+CREATE
+// ALMACENES
+(a1:Almacen {id:""A1"", nombre:""Almacen Central"", capacidad:100, lat:8.289, lon:-62.719}),
+(a2:Almacen {id:""A2"", nombre:""Almacen Norte"", capacidad:80, lat:8.300, lon:-62.700}),
+(a3:Almacen {id:""A3"", nombre:""Almacen Sur"", capacidad:60, lat:8.270, lon:-62.730}),
+
+// PUNTOS DE ENTREGA
+(p1:PuntoEntrega {id:""P1"", nombre:""Cliente 1"", lat:8.310, lon:-62.710}),
+(p2:PuntoEntrega {id:""P2"", nombre:""Cliente 2"", lat:8.320, lon:-62.690}),
+(p3:PuntoEntrega {id:""P3"", nombre:""Cliente 3"", lat:8.305, lon:-62.725}),
+(p4:PuntoEntrega {id:""P4"", nombre:""Cliente 4"", lat:8.295, lon:-62.740}),
+
+// INTERSECCIONES
+(i1:Interseccion {id:""I1"", lat:8.291, lon:-62.715}),
+(i2:Interseccion {id:""I2"", lat:8.295, lon:-62.712}),
+(i3:Interseccion {id:""I3"", lat:8.305, lon:-62.705}),
+(i4:Interseccion {id:""I4"", lat:8.315, lon:-62.698}),
+(i5:Interseccion {id:""I5"", lat:8.280, lon:-62.725}),
+(i6:Interseccion {id:""I6"", lat:8.275, lon:-62.735}),
+(i7:Interseccion {id:""I7"", lat:8.298, lon:-62.720}),
+(i8:Interseccion {id:""I8"", lat:8.310, lon:-62.720});",2,,false
+(1ra P) Cargar_datos 4-5 (1),,"// =====================================
+// CREACIÓN DE RELACIONES CONECTA_A
+// =====================================
+
+MATCH
+(a1:Almacen {id:""A1""}),
+(a2:Almacen {id:""A2""}),
+(a3:Almacen {id:""A3""}),
+(p1:PuntoEntrega {id:""P1""}),
+(p2:PuntoEntrega {id:""P2""}),
+(p3:PuntoEntrega {id:""P3""}),
+(p4:PuntoEntrega {id:""P4""}),
+(i1:Interseccion {id:""I1""}),
+(i2:Interseccion {id:""I2""}),
+(i3:Interseccion {id:""I3""}),
+(i4:Interseccion {id:""I4""}),
+(i5:Interseccion {id:""I5""}),
+(i6:Interseccion {id:""I6""}),
+(i7:Interseccion {id:""I7""}),
+(i8:Interseccion {id:""I8""})
+
+CREATE
+
+// ===============================
+// CONEXIÓN ALMACENES A LA RED
+// ===============================
+(a1)-[:CONECTA_A {distancia:5, tiempo_estimado:10, estado_trafico:0.3, peso_maximo:20}]->(i1),
+(a2)-[:CONECTA_A {distancia:6, tiempo_estimado:12, estado_trafico:0.6, peso_maximo:10}]->(i3),
+(a3)-[:CONECTA_A {distancia:4, tiempo_estimado:7, estado_trafico:0.2, peso_maximo:25}]->(i5),
+
+// ===============================
+// RED CENTRAL DE INTERSECCIONES
+// ===============================
+
+// Eje horizontal principal
+(i1)-[:CONECTA_A {distancia:2, tiempo_estimado:4, estado_trafico:0.3, peso_maximo:25}]->(i2),
+(i2)-[:CONECTA_A {distancia:2, tiempo_estimado:4, estado_trafico:0.4, peso_maximo:25}]->(i3),
+(i3)-[:CONECTA_A {distancia:2, tiempo_estimado:5, estado_trafico:0.5, peso_maximo:25}]->(i4),
+
+// Eje vertical
+(i2)-[:CONECTA_A {distancia:3, tiempo_estimado:6, estado_trafico:0.3, peso_maximo:20}]->(i7),
+(i3)-[:CONECTA_A {distancia:3, tiempo_estimado:6, estado_trafico:0.6, peso_maximo:20}]->(i8),
+
+// Zona sur
+(i5)-[:CONECTA_A {distancia:2, tiempo_estimado:4, estado_trafico:0.2, peso_maximo:20}]->(i6),
+(i6)-[:CONECTA_A {distancia:3, tiempo_estimado:5, estado_trafico:0.3, peso_maximo:20}]->(i7),
+
+// Conexión norte-sur
+(i7)-[:CONECTA_A {distancia:2, tiempo_estimado:4, estado_trafico:0.5, peso_maximo:20}]->(i2),
+
+// ===============================
+// CONEXIÓN A CLIENTES
+// ===============================
+
+(i4)-[:CONECTA_A {distancia:3, tiempo_estimado:6, estado_trafico:0.4, peso_maximo:20}]->(p2),
+(i3)-[:CONECTA_A {distancia:4, tiempo_estimado:8, estado_trafico:0.2, peso_maximo:25}]->(p1),
+(i6)-[:CONECTA_A {distancia:2, tiempo_estimado:5, estado_trafico:0.1, peso_maximo:15}]->(p3),
+(i8)-[:CONECTA_A {distancia:2, tiempo_estimado:4, estado_trafico:0.3, peso_maximo:20}]->(p4);",3,,false
+(1ra P) Cargar_datos 5-5 (1),,"// ===========================================
+// MOSTRAR TODAS LAS RELACIONES
+// ===========================================
+
+MATCH (a)-[r:CONECTA_A]->(b)
+RETURN a, r, b,
+       r.distancia AS distancia,
+       r.tiempo_estimado AS tiempo,
+       r.estado_trafico AS trafico,
+       r.peso_maximo AS peso;",4,,false

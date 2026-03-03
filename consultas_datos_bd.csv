@@ -1,0 +1,119 @@
+name,description,query,id,parentId,isFolder
+(2da P) Consulta_datos 1- 7,,"//Segunda parte a ejecutar
+
+// ===========================================
+// ELIMINAR PROYECCIÓN SI EXISTE
+// ===========================================
+
+CALL gds.graph.drop('logisticsGraph', false)
+YIELD graphName
+RETURN graphName;",0,,false
+(2da P) Consulta_datos 2- 7,,"// ===========================================
+// PROYECTAR GRAFO
+// ===========================================
+
+CALL gds.graph.project(
+    'logisticsGraph',
+    {
+        Almacen: { properties: ['lat','lon'] },
+        Interseccion: { properties: ['lat','lon'] },
+        PuntoEntrega: { properties: ['lat','lon'] }
+    },
+    {
+        CONECTA_A: {
+            properties: ['distancia','tiempo_estimado','estado_trafico','peso_maximo']
+        }
+    }
+);",1,,false
+(2da P) Consulta_datos 3- 7,,"// ===========================================
+// DIJKSTRA (PESO = distancia)
+// ===========================================
+
+MATCH (source:Almacen {id:'A1'}),
+      (target:PuntoEntrega {id:'P1'})
+
+CALL gds.shortestPath.dijkstra.stream('logisticsGraph', {
+    sourceNode: id(source),
+    targetNode: id(target),
+    relationshipWeightProperty: 'distancia'
+})
+YIELD totalCost, nodeIds
+
+WITH totalCost,
+     [nodeId IN nodeIds | gds.util.asNode(nodeId)] AS nodes
+
+UNWIND range(0, size(nodes)-2) AS i
+WITH totalCost, nodes[i] AS n1, nodes[i+1] AS n2
+
+MATCH (n1)-[r:CONECTA_A]->(n2)
+
+RETURN
+'Dijkstra' AS algoritmo,
+totalCost AS costo_total,
+n1, r, n2;",2,,false
+(2da P) Consulta_datos 4- 7,,"// ===========================================
+// A* (PESO = tiempo_estimado)
+// ===========================================
+
+MATCH (source:Almacen {id:'A1'}),
+      (target:PuntoEntrega {id:'P1'})
+
+CALL gds.shortestPath.astar.stream('logisticsGraph', {
+    sourceNode: id(source),
+    targetNode: id(target),
+    relationshipWeightProperty: 'tiempo_estimado',
+    latitudeProperty: 'lat',
+    longitudeProperty: 'lon'
+})
+YIELD totalCost, nodeIds
+
+WITH totalCost,
+     [nodeId IN nodeIds | gds.util.asNode(nodeId)] AS nodes
+
+UNWIND range(0, size(nodes)-2) AS i
+WITH totalCost, nodes[i] AS n1, nodes[i+1] AS n2
+
+MATCH (n1)-[r:CONECTA_A]->(n2)
+
+RETURN
+'A*' AS algoritmo,
+totalCost AS costo_total,
+n1, r, n2;",3,,false
+(2da P) Consulta_datos 5- 7,,"// ===========================================
+// COSTO DINÁMICO BASADO EN TRÁFICO
+// ===========================================
+
+MATCH path = (a:Almacen {id:'A1'})-[:CONECTA_A*]->(p:PuntoEntrega {id:'P1'})
+WITH path,
+     REDUCE(total = 0.0,
+        r IN relationships(path) |
+        total + (r.distancia * r.estado_trafico)
+     ) AS costo_dinamico
+RETURN
+'Costo Dinámico' AS algoritmo,
+costo_dinamico
+ORDER BY costo_dinamico ASC
+LIMIT 1;",4,,false
+(2da P) Consulta_datos 6- 7,,"// ===========================================
+// RUTAS QUE SOPORTEN 15 TONELADAS
+// ===========================================
+
+MATCH path = (a:Almacen {id:'A1'})-[:CONECTA_A*]->(p:PuntoEntrega {id:'P1'})
+WHERE ALL(r IN relationships(path) WHERE r.peso_maximo >= 15)
+RETURN path;",5,,false
+(2da P) Consulta_datos 7- 7,,"// ===========================================
+// DESCOMPOSICION DE NODOS (USO DE UNWIND)
+// ===========================================
+
+MATCH (source:Almacen {id:'A1'}),
+      (target:PuntoEntrega {id:'P1'})
+
+CALL gds.shortestPath.dijkstra.stream('logisticsGraph', {
+    sourceNode: id(source),
+    targetNode: id(target),
+    relationshipWeightProperty: 'distancia'
+})
+YIELD nodeIds
+
+UNWIND nodeIds AS nodeId
+RETURN gds.util.asNode(nodeId).id AS punto_de_ruta;",6,,false
