@@ -1,7 +1,9 @@
 Descripción breve del proyecto
 
 El proyecto actual consistió en modelar y diseñar una red logística urbana con Neo4j, donde los almacenes, las intersecciones y los puntos de entrega se representaron como nodos y las conexiones viales como relaciones ponderadas que contenían atributos tales como el tiempo estimado, la distancia y la situación del tráfico.
+
 Se elaboró una proyección en memoria con la librería Neo4j Graph Data Science, lo cual posibilitó llevar a cabo algoritmos de caminos mínimos, como A* y Dijkstra, para establecer rutas ideales bajo diversos parámetros de optimización.
+
 El proyecto evidenció que el análisis de la conectividad y la optimización de rutas en tiempo real son simplificados mediante una perspectiva fundamentada en grafos, lo cual brinda una solución más apropiada que los modelos relacionales tradicionales para las dificultades logísticas que giran en torno a relaciones complejas.
 
 --Tecnologías empleadas
